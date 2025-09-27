@@ -34,7 +34,10 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // CORS configuration - simplified
 app.use(
   cors({
-    origin: "http://localhost:5173", // Your Vite frontend URL
+    origin: [
+      "http://localhost:5173",
+      "https://blogapp-frontend-dz8q.onrender.com"
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
