@@ -19,7 +19,7 @@ const blogController = {
         title,
         desc,
         content,
-        image,
+        image: req.file.path,
         category: category || "All",
         subcategory: subcategory || "",
         user: req.user.userId,
