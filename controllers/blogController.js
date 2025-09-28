@@ -5,7 +5,8 @@ const blogController = {
   createBlog: async (req, res) => {
     try {
       const { title, desc, content, category, subcategory } = req.body;
-      const image = req.file ? req.file.filename : null;
+
+      const image = req.file ? req.file.path : null;
 
       if (!image) {
         return res.status(400).json({
@@ -72,7 +73,8 @@ const blogController = {
   updateBlog: async (req, res) => {
     try {
       const { blogId, title, desc, content } = req.body;
-      const image = req.file ? req.file.filename : undefined;
+
+      const image = req.file ? req.file.path : undefined;
 
       if (!blogId) {
         return res.status(400).json({
@@ -87,11 +89,6 @@ const blogController = {
           success: false,
           msg: "Blog not found",
         });
-      }
-
-      if (!blog.user) {
-        blog.user = req.user.userId;
-        await blog.save();
       }
 
       if (blog.user.toString() !== req.user.userId.toString()) {
