@@ -6,11 +6,9 @@ var logger = require("morgan");
 var cors = require("cors");
 require("dotenv").config();
 
-// Database connection
 var connectDB = require("./config/database");
 connectDB();
 
-// Route imports
 var indexRouter = require("./routes/index");
 var authRouter = require("./routes/auth");
 var blogsRouter = require("./routes/blogs");
@@ -19,42 +17,32 @@ var contactsRouter = require("./routes/contacts");
 
 var app = express();
 
-// View engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
-// Middleware
 app.use(logger("dev"));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// CORS configuration - simplified
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://blogapp-frontend-dz8q.onrender.com"
-    ],
+    origin: "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
 
-// Handle preflight requests
 app.options("*", cors());
 
-// Routes - FIXED: Mount routes properly
-app.use("/", indexRouter); // This handles / and /health
+app.use("/", indexRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/blogs", blogsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/contacts", contactsRouter);
 
-// Test route to verify API is working
 app.get("/api/test", (req, res) => {
   res.json({
     success: true,
@@ -71,7 +59,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// 404 handler for API routes
 app.use("/api/*", function (req, res, next) {
   res.status(404).json({
     success: false,
@@ -79,13 +66,10 @@ app.use("/api/*", function (req, res, next) {
   });
 });
 
-// 404 handler for other routes
 app.use(function (req, res, next) {
   if (req.accepts("html")) {
-    // For HTML requests, you might want to serve a page
     res.status(404).send("Page not found");
   } else {
-    // For API requests, return JSON
     res.status(404).json({
       success: false,
       message: "Endpoint not found",
@@ -93,7 +77,6 @@ app.use(function (req, res, next) {
   }
 });
 
-// Error handler
 app.use(function (err, req, res, next) {
   console.error("Detailed Error:", err);
   console.error("Error Stack:", err.stack);
