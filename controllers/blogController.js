@@ -2,13 +2,13 @@ const Blog = require("../models/Blog");
 const User = require("../models/User");
 
 const blogController = {
+
   createBlog: async (req, res) => {
     try {
       const { title, desc, content, category, subcategory } = req.body;
 
-      const image = req.file ? req.file.path : null;
-
-      if (!image) {
+      // Check if file exists
+      if (!req.file) {
         return res.status(400).json({
           success: false,
           msg: "Image is required",
@@ -19,7 +19,7 @@ const blogController = {
         title,
         desc,
         content,
-        image: req.file.path,
+        image: req.file.path, 
         category: category || "All",
         subcategory: subcategory || "",
         user: req.user.userId,
@@ -40,7 +40,7 @@ const blogController = {
       });
     }
   },
-
+  
   getBlog: async (req, res) => {
     try {
       const { blogId } = req.body;
@@ -70,11 +70,9 @@ const blogController = {
     }
   },
 
-  updateBlog: async (req, res) => {
+ updateBlog: async (req, res) => {
     try {
-      const { blogId, title, desc, content } = req.body;
-
-      const image = req.file ? req.file.path : undefined;
+      const { blogId, title, desc, content, category, subcategory } = req.body;
 
       if (!blogId) {
         return res.status(400).json({
@@ -83,6 +81,7 @@ const blogController = {
         });
       }
 
+      // Find the blog first
       let blog = await Blog.findById(blogId);
       if (!blog) {
         return res.status(404).json({
@@ -91,6 +90,11 @@ const blogController = {
         });
       }
 
+      // Debug: Check user IDs
+      console.log("Blog user ID:", blog.user.toString());
+      console.log("Request user ID:", req.user.userId.toString());
+
+      // Check ownership
       if (blog.user.toString() !== req.user.userId.toString()) {
         return res.status(403).json({
           success: false,
@@ -98,16 +102,21 @@ const blogController = {
         });
       }
 
+      // Prepare update data
       const updateData = {
         title: title || blog.title,
         desc: desc || blog.desc,
         content: content || blog.content,
+        category: category || blog.category,
+        subcategory: subcategory || blog.subcategory,
       };
 
-      if (image) {
-        updateData.image = image;
+      // If new image is provided, use it
+      if (req.file) {
+        updateData.image = req.file.path;
       }
 
+      // Update the blog
       blog = await Blog.findByIdAndUpdate(blogId, updateData, {
         new: true,
       }).populate("user", "name username");
@@ -126,64 +135,60 @@ const blogController = {
     }
   },
 
-  deleteBlog: async (req, res) => {
-    try {
-      const { blogId } = req.body;
+deleteBlog: async (req, res) => {
+  try {
+    const { blogId } = req.body;
 
-      // First, check if blogId is provided
-      if (!blogId) {
-        return res.status(400).json({
-          success: false,
-          msg: "Blog ID is required",
-        });
-      }
-
-      const blog = await Blog.findById(blogId);
-      if (!blog) {
-        return res.status(404).json({
-          success: false,
-          msg: "Blog not found",
-        });
-      }
-
-      // Debug logging to check the blog object
-      console.log("Blog found:", blog);
-      console.log("Blog user:", blog.user);
-      console.log("Request user ID:", req.user.userId);
-
-      // Check if user owns the blog - with proper null checks
-      if (!blog.user) {
-        return res.status(400).json({
-          success: false,
-          msg: "Blog user information is missing",
-        });
-      }
-
-      // Convert both to string for comparison
-      const blogUserId = blog.user.toString();
-      const requestUserId = req.user.userId.toString();
-
-      if (blogUserId !== requestUserId) {
-        return res.status(403).json({
-          success: false,
-          msg: "Not authorized to delete this blog",
-        });
-      }
-
-      await Blog.findByIdAndDelete(blogId);
-
-      res.json({
-        success: true,
-        msg: "Blog deleted successfully",
-      });
-    } catch (error) {
-      console.error("Delete blog error:", error);
-      res.status(500).json({
+    if (!blogId) {
+      return res.status(400).json({
         success: false,
-        msg: "Error deleting blog",
+        msg: "Blog ID is required",
       });
     }
-  },
+
+    const blog = await Blog.findById(blogId);
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        msg: "Blog not found",
+      });
+    }
+
+    // Debug information
+    console.log("Blog user:", blog.user?.toString());
+    console.log("Request user:", req.user.userId.toString());
+    console.log("Is equal:", blog.user?.toString() === req.user.userId.toString());
+
+    // Check if blog has user field
+    if (!blog.user) {
+      return res.status(400).json({
+        success: false,
+        msg: "Blog user information is missing",
+      });
+    }
+
+    // Check ownership
+    if (blog.user.toString() !== req.user.userId.toString()) {
+      return res.status(403).json({
+        success: false,
+        msg: "Not authorized to delete this blog. You can only delete your own blogs.",
+      });
+    }
+
+    await Blog.findByIdAndDelete(blogId);
+
+    res.json({
+      success: true,
+      msg: "Blog deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete blog error:", error);
+    res.status(500).json({
+      success: false,
+      msg: "Error deleting blog",
+    });
+  }
+},
 
   getBlogs: async (req, res) => {
     try {
