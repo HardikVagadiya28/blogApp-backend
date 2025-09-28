@@ -28,7 +28,10 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [
+      'http://localhost:5173',
+      'https://blogapp-frontend-dz8q.onrender.com'
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
